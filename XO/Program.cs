@@ -1,18 +1,139 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace XO
 {
-    class Program
+    internal class Program
     {
-       static char win = '-';
-       static string PlayerName1, PlayerName2;
-       static char[] cells = new char[]{ '-', '-', '-', '-', '-', '-', '-', '-', '-' };
+        private const char Player1Char = 'X';
+        private const char Player2Char = '0';
+        private static char win = '-';
+        private static string PlayerName1, PlayerName2;
+        private static readonly char[] cells = {'-', '-', '-', '-', '-', '-', '-', '-', '-'};
 
-        static void show_cells()
+        private static string EnterPlayerName(int playerNumber)
+        {
+            string result;
+
+            do
+            {
+                Console.Write($"Введите имя игрока {playerNumber}: ");
+                result = Console.ReadLine();
+            } while (string.IsNullOrWhiteSpace(result));
+
+            return result;
+        }
+
+        private static int EnterCellNumber(string prompt)
+        {
+            int result;
+            string stringInput;
+
+            do
+            {
+                Console.Write(prompt);
+                stringInput = Console.ReadLine();
+                Console.WriteLine();
+            } while (!int.TryParse(stringInput, out result));
+
+            return result;
+        }
+
+        private static string GetPlayerName(int number)
+        {
+            return number == 1 ? PlayerName1 : PlayerName2;
+        }
+
+        private static bool IsFirstPlayer(int step)
+        {
+            return step % 2 != 0;
+        }
+
+        private static bool IsRowCompleted(int rowIndex, out char value)
+        {
+            value = cells[rowIndex * 3];
+            return cells[rowIndex * 3] == cells[rowIndex * 3 + 1] && cells[rowIndex * 3 + 1] == cells[rowIndex * 3 + 2];
+        }
+
+        private static bool IsColumnCompleted(int columnIndex, out char value)
+        {
+            value = cells[columnIndex];
+            return cells[columnIndex] == cells[columnIndex + 3] && cells[columnIndex + 3] == cells[columnIndex + 6];
+        }
+
+        private static bool IsAnyDiagonalCompleted(out char value)
+        {
+            if (cells[2] == cells[4] && cells[4] == cells[6])
+            {
+                value = cells[2];
+                return true;
+            }
+
+            value = cells[0];
+            return cells[0] == cells[4] && cells[4] == cells[8];
+        }
+
+        private static bool IsCellNumberInRange(int cellNumber)
+        {
+            return cellNumber >= 1 && cellNumber <= 9;
+        }
+
+        private static bool IsCellUsed(int cellNumber)
+        {
+            return cells[cellNumber - 1] == Player2Char || cells[cellNumber - 1] == Player1Char;
+        }
+
+        private static bool IsCompleted(out char symbol)
+        {
+            char result;
+
+            for (var i = 0; i < 3; i++)
+            {
+                if (IsRowCompleted(i, out symbol))
+                    return true;
+
+                if (IsColumnCompleted(i, out symbol))
+                    return true;
+            }
+
+            if (IsAnyDiagonalCompleted(out symbol))
+                return true;
+
+            return false;
+        }
+
+        private static void SetCell(int cellNumber, int playerNumber)
+        {
+            cells[cellNumber - 1] = playerNumber == 1 ? Player1Char : Player2Char;
+        }
+
+        private static void MakeMove(int num)
+        {
+            Console.Write(GetPlayerName(num));
+
+            var cell = EnterCellNumber(", введите номер ячейки,сделайте свой ход: ");
+
+            while (!IsCellNumberInRange(cell) || IsCellUsed(cell))
+                cell = EnterCellNumber(
+                    "Введите номер правильного ( 1-9 ) или пустой ( --- ) клетки , чтобы сделать ход:");
+
+            SetCell(cell, num);
+        }
+
+        private static void ShowResult(bool anyWin)
+        {
+            if (!anyWin)
+            {
+                Console.WriteLine("Ничья.");
+                return;
+            }
+
+            if (win == Player1Char)
+                Console.WriteLine($"{PlayerName1}, вы  выиграли поздравляем\n{PlayerName2}, а вы проиграли...");
+            else if (win == Player2Char)
+                Console.WriteLine($"{PlayerName2}, вы  выиграли поздравляем\n {PlayerName1}, а вы проиграли...");
+        }
+
+        private static void ShowCells()
         {
             Console.Clear();
 
@@ -24,87 +145,34 @@ namespace XO
             Console.WriteLine("Текущая ситуация (---пустой):");
             Console.WriteLine($"-{cells[0]}-|-{cells[1]}-|-{cells[2]}-");
             Console.WriteLine($"-{cells[3]}-|-{cells[4]}-|-{cells[5]}-");
-            Console.WriteLine($"-{cells[6]}-|-{cells[7]}-|-{cells[8]}-");        
-        }
-        static void make_move(int num)
-        {
-            string raw_cell;
-            int cell;
-            if (num == 1) Console.Write(PlayerName1);
-            else Console.Write(PlayerName2);
-            do
-            {
-                Console.Write(",введите номер ячейки,сделайте свой ход:");
-
-                raw_cell = Console.ReadLine();
-            }
-            while (!Int32.TryParse(raw_cell, out cell));
-            while (cell > 9 || cell < 1 || cells[cell - 1] == 'O' || cells[cell - 1] == 'X')
-            {
-                do
-                {
-                    Console.Write("Введите номер правильного ( 1-9 ) или пустой ( --- ) клетки , чтобы сделать ход:");
-                    raw_cell = Console.ReadLine();
-                }
-                while (!Int32.TryParse(raw_cell, out cell));
-                Console.WriteLine();
-            }
-            if (num == 1) cells[cell - 1] = 'X';
-            else cells[cell - 1] = 'O';
-            
-        }
-        static char check()
-        {
-            for (int i = 0; i < 3; i++)
-                if (cells[i * 3] == cells[i * 3 + 1] && cells[i * 3 + 1] == cells[i * 3 + 2])
-                    return cells[i];
-                else if (cells[i] == cells[i + 3] && cells[i + 3] == cells[i + 6])
-                    return cells[i];
-                else if ((cells[2] == cells[4] && cells[4] == cells[6]) || (cells[0] == cells[4] && cells[4] == cells[8]))
-                    return cells[i];
-            return '-';
+            Console.WriteLine($"-{cells[6]}-|-{cells[7]}-|-{cells[8]}-");
         }
 
-        static void result()
-        {
-            if (win == 'X')
-                Console.WriteLine($"{PlayerName1} вы  выиграли поздравляем {PlayerName2} а вы проиграли...");
-            else if (win == 'O')
-                Console.WriteLine($"{PlayerName2} вы  выиграли поздравляем {PlayerName1} а вы проиграли...");
-
-        }
-
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             do
             {
-                Console.Write("Введите имя первого игрока : ");
-                PlayerName1 = Console.ReadLine();
-
-                Console.Write("Введите имя второго игрока: ");
-                PlayerName2 = Console.ReadLine();
+                PlayerName1 = EnterPlayerName(1);
+                PlayerName2 = EnterPlayerName(2);
                 Console.WriteLine();
             } while (PlayerName1 == PlayerName2);
 
-            show_cells();
+            ShowCells();
 
-            for (int move = 1; move <= 9; move++)
+            for (var move = 1; move <= cells.Length; move++)
             {
-                if (move % 2 != 0) make_move(1);
-                else make_move(2);
+                MakeMove(IsFirstPlayer(move) ? 1 : 2);
 
-                show_cells();
+                ShowCells();
 
                 if (move >= 5)
-                {
-                    win = check();
-                    if (win != '-')
+                    if (IsCompleted(out win))
                         break;
-                }
-
             }
 
-            result();
+            ShowResult(IsCompleted(out win));
+
+            Console.ReadLine();
         }
     }
 }
